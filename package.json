@@ -1,0 +1,29 @@
+{
+  "name": "voyage-log-negative-cycle",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "航海日志差分约束负环考证：录入 date(v)-date(u)<=c 断言，求最短且可复核的矛盾链",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit -p tsconfig.json && vite build",
+    "preview": "vite preview --host --port 4173 --strictPort",
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test",
+    "verify": "npm run build && npm run test:unit && npm run test:e2e"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.47.2",
+    "@types/node": "^20.19.43",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.2",
+    "typescript": "~5.6.3",
+    "vite": "^5.4.8",
+    "vitest": "^2.1.3"
+  }
+}

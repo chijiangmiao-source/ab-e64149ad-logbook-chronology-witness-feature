@@ -1,0 +1,17 @@
+services:
+  web:
+    build:
+      context: .
+      target: web
+    ports:
+      # 宿主端口可用 WEB_PORT 覆盖，默认 8080：WEB_PORT=3000 docker compose up web
+      - "${WEB_PORT:-8080}:80"
+    restart: unless-stopped
+
+  # 一次性校验服务：构建镜像后运行 Vitest + Playwright，跑完即退出。
+  # 用法：docker compose run --rm verify
+  verify:
+    build:
+      context: .
+      target: verify
+    init: true
