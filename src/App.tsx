@@ -9,8 +9,10 @@ import {
   type RawRow,
 } from './lib/parse';
 import { findNegativeCycle } from './lib/solver';
-import type { SolveResult } from './lib/types';
+import { rehearseTightening } from './lib/rehearsal';
+import type { RehearsalResult, SolveResult } from './lib/types';
 import { ResultPanel } from './components/ResultPanel';
+import { RehearsalPanel, RehearsalVoidNotice } from './components/RehearsalPanel';
 
 interface RowState extends RawRow {
   key: number;
@@ -34,27 +36,90 @@ const CONSISTENT_EXAMPLE: RawRow[] = [
   { id: '3', u: '离港', v: '靠港', c: '-5' },
 ];
 
+/** 进行中的修订预演：锚定到行 key（行删除时可识别）与断言编号。 */
+interface RehearsalState {
+  targetKey: number;
+  targetId: number;
+  input: string;
+}
+
 export default function App() {
   const [rows, setRows] = useState<RowState[]>(() => [emptyRow(), emptyRow(), emptyRow()]);
   const [result, setResult] = useState<SolveResult | null>(null);
+  const [rehearsal, setRehearsal] = useState<RehearsalState | null>(null);
+  const [voidNotice, setVoidNotice] = useState<string | null>(null);
 
   const batch = useMemo(() => validateBatch(rows), [rows]);
   const filledCount = batch.rows.filter((r) => !r.empty).length;
   const eventCount = new Set(batch.assertions.flatMap((a) => [a.u, a.v])).size;
 
+  // 任何录入变化都立即作废旧结论；若修订预演进行中则一并作废并就地反馈。
+  // 闭包中的 rehearsal 来自当前渲染，各 handler 每次渲染都重新创建，值不会过期。
+  const invalidateRehearsal = (message: string) => {
+    if (rehearsal === null) return;
+    setRehearsal(null);
+    setVoidNotice(message);
+  };
   const mutate = (updater: (prev: RowState[]) => RowState[]) => {
     setResult(null); // 输入一旦变化，旧结论作废，避免展示过期矛盾链。
     setRows(updater);
   };
-  const updateField = (key: number, field: keyof RawRow, value: string) =>
+  const changedMessage = '录入内容已变化，修订预演已作废。';
+  const updateField = (key: number, field: keyof RawRow, value: string) => {
+    invalidateRehearsal(changedMessage);
     mutate((prev) => prev.map((r) => (r.key === key ? { ...r, [field]: value } : r)));
-  const addRow = () => mutate((prev) => [...prev, emptyRow()]);
-  const removeRow = (key: number) => mutate((prev) => prev.filter((r) => r.key !== key));
-  const loadRows = (raws: RawRow[]) => mutate(() => raws.map(fromRaw));
+  };
+  const addRow = () => {
+    invalidateRehearsal(changedMessage);
+    mutate((prev) => [...prev, emptyRow()]);
+  };
+  const removeRow = (key: number) => {
+    invalidateRehearsal(
+      rehearsal?.targetKey === key ? '预演目标行已被删除，修订预演已作废。' : changedMessage,
+    );
+    mutate((prev) => prev.filter((r) => r.key !== key));
+  };
+  const loadRows = (raws: RawRow[]) => {
+    invalidateRehearsal(changedMessage);
+    mutate(() => raws.map(fromRaw));
+  };
 
   const compute = () => {
     if (!batch.ok) return;
+    setVoidNotice(null);
+    setRehearsal(null);
     setResult(findNegativeCycle(batch.assertions));
+  };
+
+  // 预演只在相容结论旁可用：目标行当前须解析为一条合法断言。
+  const consistent = result?.kind === 'consistent';
+  const targetAssertion =
+    rehearsal !== null
+      ? batch.assertions.find((a) => a.id === rehearsal.targetId) ?? null
+      : null;
+
+  const rehearsalResult: RehearsalResult | null = useMemo(() => {
+    if (!consistent || rehearsal === null || targetAssertion === null) return null;
+    if (rehearsal.input.trim() === '') return null; // 尚未输入：不预演、不报 invalid
+    return rehearseTightening(batch.assertions, rehearsal.targetId, rehearsal.input);
+  }, [consistent, rehearsal, targetAssertion, batch.assertions]);
+
+  const startRehearsal = (key: number) => {
+    const index = rows.findIndex((r) => r.key === key);
+    const assertion = index === -1 ? undefined : batch.rows[index]?.assertion;
+    if (!assertion) return;
+    setVoidNotice(null);
+    setRehearsal({ targetKey: key, targetId: assertion.id, input: '' });
+  };
+
+  const writeBack = (cNew: number) => {
+    if (rehearsal === null) return;
+    const key = rehearsal.targetKey;
+    // 写回是预演内的显式动作：不作废反馈，直接更新该行并清除旧结论与预演。
+    setResult(null);
+    setRehearsal(null);
+    setVoidNotice(null);
+    setRows((prev) => prev.map((r) => (r.key === key ? { ...r, c: String(cNew) } : r)));
   };
 
   return (
@@ -109,8 +174,15 @@ export default function App() {
               const validation = batch.rows[i];
               const errors = validation?.errors ?? {};
               const invalid = validation !== undefined && !validation.empty && hasErrors(errors);
+              const isRehearsalTarget = rehearsal?.targetKey === row.key;
               return (
-                <tr key={row.key} className={invalid ? 'row-invalid' : ''} data-testid={`row-${i}`}>
+                <tr
+                  key={row.key}
+                  className={[invalid ? 'row-invalid' : '', isRehearsalTarget ? 'row-rehearsal' : '']
+                    .filter(Boolean)
+                    .join(' ')}
+                  data-testid={`row-${i}`}
+                >
                   <td className="row-number">{i + 1}</td>
                   <td>
                     <input
@@ -183,6 +255,17 @@ export default function App() {
                     >
                       删除
                     </button>
+                    {consistent && validation?.assertion && (
+                      <button
+                        type="button"
+                        className="link"
+                        onClick={() => startRehearsal(row.key)}
+                        aria-pressed={isRehearsalTarget}
+                        data-testid={`row-${i}-rehearse`}
+                      >
+                        收紧预演
+                      </button>
+                    )}
                   </td>
                 </tr>
               );
@@ -217,6 +300,24 @@ export default function App() {
       </section>
 
       {result && <ResultPanel result={result} />}
+
+      {consistent && rehearsal !== null && targetAssertion !== null && (
+        <RehearsalPanel
+          target={targetAssertion}
+          input={rehearsal.input}
+          result={rehearsalResult}
+          onInputChange={(value) =>
+            setRehearsal((prev) => (prev === null ? null : { ...prev, input: value }))
+          }
+          onWriteBack={writeBack}
+          onCancel={() => {
+            setRehearsal(null);
+            setVoidNotice(null);
+          }}
+        />
+      )}
+
+      {voidNotice !== null && rehearsal === null && <RehearsalVoidNotice message={voidNotice} />}
     </main>
   );
 }

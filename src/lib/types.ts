@@ -42,3 +42,69 @@ export interface NegativeCycleWitness {
 export type SolveResult =
   | { kind: 'consistent' }
   | { kind: 'negative-cycle'; witness: NegativeCycleWitness };
+
+/**
+ * 修订预演中的一步：拟议断言（首步）或返回路径上的断言（其余步），
+ * 附沿矛盾链走到该步为止的累计权重。
+ */
+export interface RehearsalStep {
+  assertion: Assertion;
+  /** 该步是否为被修订断言本身（拟议断言）；false 表示属于排除边后的返回路径。 */
+  revised: boolean;
+  /** 沿矛盾链累加到本步（含）的权重和。 */
+  cumulative: number;
+}
+
+/**
+ * 单条断言收紧预演结果（被修订边不参与返回路径计算）。
+ *
+ * - safe：新上界 cNew 不超过安全临界值 threshold，写回后系统仍相容；
+ * - violated：cNew 越过临界值，拟议断言与返回路径组成权重和为负的矛盾链，禁止写回；
+ * - unbounded：不存在从结束事件回到起始事件的路径，断言可无限收紧，无有限临界值；
+ * - invalid：拟议 cNew 不是合法整数、超出 c 取值范围或不小于原值。
+ */
+export type RehearsalResult =
+  | {
+      kind: 'safe';
+      /** 目标断言编号。 */
+      targetId: number;
+      /** 拟议新上界。 */
+      cNew: number;
+      /** 原上界。 */
+      cOld: number;
+      /** 可安全收紧的临界值（safe 必有有限返回路径）。 */
+      threshold: number;
+    }
+  | {
+      kind: 'violated';
+      targetId: number;
+      cNew: number;
+      cOld: number;
+      /** 导致越界的临界值。 */
+      threshold: number;
+      /** 矛盾链：首元素为拟议断言，其后为排除被修订边后的返回路径。 */
+      steps: RehearsalStep[];
+      /** 拟议断言权重与返回路径权重之和（即矛盾链累计总和），保证小于零。 */
+      total: number;
+      /** 返回路径的总权重。 */
+      pathWeight: number;
+      /** 返回路径的边数。 */
+      edgeCount: number;
+    }
+  | {
+      kind: 'unbounded';
+      targetId: number;
+      cNew: number;
+      cOld: number;
+    }
+  | {
+      kind: 'invalid';
+      targetId: number;
+      /** 成功解析为整数时的拟议值，否则为 null。 */
+      cNew: number | null;
+      cOld: number;
+      /** 用户输入的原始字符串。 */
+      cRaw: string;
+      /** 无法预演的原因（就地反馈）。 */
+      reason: string;
+    };

@@ -254,3 +254,92 @@ button.compute:hover:not(:disabled) {
 .conclusion {
   font-weight: 600;
 }
+
+.rehearsal {
+  margin-top: 20px;
+  border: 1px solid var(--accent);
+  background: #fff;
+  border-radius: 10px;
+  padding: 18px 22px;
+  line-height: 1.8;
+}
+
+.rehearsal h2 {
+  margin-top: 0;
+  font-size: 1.1rem;
+}
+
+.rehearsal-form {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+
+.rehearsal-form input {
+  width: 12em;
+  font: inherit;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+button.writeback {
+  margin-top: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+button.writeback:hover {
+  background: #0a4f92;
+}
+
+.rehearsal-msg {
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 10px 0 0;
+}
+
+.rehearsal-msg p {
+  margin: 4px 0;
+}
+
+.rehearsal-msg.good {
+  border: 1px solid var(--good);
+  background: var(--good-bg);
+  color: var(--ink);
+}
+
+.rehearsal-msg.good .verdict {
+  color: var(--good);
+  font-weight: 600;
+}
+
+.rehearsal-msg.bad {
+  border: 1px solid var(--bad);
+  background: var(--bad-bg);
+  color: var(--ink);
+}
+
+.rehearsal-msg.bad .verdict,
+.rehearsal-msg.bad .conclusion {
+  color: var(--bad);
+  font-weight: 600;
+}
+
+.rehearsal-msg.warn {
+  border: 1px solid #b07a12;
+  background: #fdf5e3;
+  color: #8a5e08;
+  font-weight: 600;
+}
+
+tr.row-rehearsal {
+  background: #eef5fc;
+}
+
+.chain li.step-revised {
+  background: #fff5f4;
+}
