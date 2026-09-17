@@ -254,3 +254,98 @@ button.compute:hover:not(:disabled) {
 .conclusion {
   font-weight: 600;
 }
+
+.row-rehearsal {
+  background: #eef5fc;
+}
+
+.notice {
+  margin-top: 14px;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.notice.written {
+  border: 1px solid var(--good);
+  background: var(--good-bg);
+  color: var(--good);
+}
+
+.notice.voided {
+  border: 1px solid var(--accent);
+  background: #eef5fc;
+  color: var(--accent);
+}
+
+.rehearsal {
+  margin-top: 20px;
+  border: 1px solid var(--accent);
+  background: #fff;
+  border-radius: 10px;
+  padding: 18px 22px;
+  line-height: 1.8;
+}
+
+.rehearsal h2 {
+  margin-top: 0;
+  font-size: 1.15rem;
+}
+
+.rehearsal-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.rehearsal-form input {
+  width: 120px;
+  font: inherit;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.rehearsal-form input[aria-invalid='true'] {
+  border-color: var(--bad);
+  background: var(--bad-bg);
+}
+
+.rehearsal-threshold {
+  background: #f2f7fc;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 10px 0;
+}
+
+.rehearsal-verdict {
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 12px 0;
+}
+
+.rehearsal-verdict.safe {
+  border: 1px solid var(--good);
+  background: var(--good-bg);
+  color: var(--good);
+}
+
+.rehearsal-verdict.violation {
+  border: 1px solid var(--bad);
+  background: var(--bad-bg);
+  color: var(--ink);
+}
+
+.rehearsal-verdict.violation .conclusion {
+  color: var(--bad);
+}
+
+.rehearsal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
